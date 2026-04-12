@@ -1,0 +1,31 @@
+{
+  "name": "swe-team",
+  "description": "Multi-agent software engineering pipeline: analyzer → developer → tester → reviewer, orchestrated by swe-leader",
+  "members": [
+    {
+      "name": "swe-leader",
+      "agentType": "general-purpose",
+      "role": "orchestrator"
+    },
+    {
+      "name": "swe-analyzer",
+      "agentType": "general-purpose",
+      "role": "requirements analyst — explores codebase, writes analysis artifacts"
+    },
+    {
+      "name": "swe-developer",
+      "agentType": "general-purpose",
+      "role": "implementer — builds code from analysis artifacts"
+    },
+    {
+      "name": "swe-tester",
+      "agentType": "general-purpose",
+      "role": "QA engineer — writes and runs tests, reports pass/fail"
+    },
+    {
+      "name": "swe-reviewer",
+      "agentType": "general-purpose",
+      "role": "code reviewer — quality gates for correctness, security, design"
+    }
+  ]
+}

@@ -4,9 +4,79 @@ const port = process.env.PORT || 3000;
 
 app.use(express.json());
 
-// Health check
+// ─── Rate Limiting ───────────────────────────────────────────────────────────
+
+const RATE_LIMIT_WINDOW_MS = 60_000; // 60 seconds
+const RATE_LIMIT_MAX = 100;          // requests per window
+
+/** @type {Map<string, { count: number, resetTime: Date }>} */
+const rateLimits = new Map();
+
+/**
+ * In-memory rate-limit middleware using a sliding window per IP.
+ * Applies to all /api/* routes.
+ */
+function rateLimitMiddleware(req, res, next) {
+  const ip = req.ip || '127.0.0.1';
+  const now = Date.now();
+
+  let record = rateLimits.get(ip);
+
+  // Initialise or reset window if expired
+  if (!record || now > record.resetTime.getTime()) {
+    record = { count: 0, resetTime: new Date(now + RATE_LIMIT_WINDOW_MS) };
+    rateLimits.set(ip, record);
+  }
+
+  if (record.count >= RATE_LIMIT_MAX) {
+    const retryAfter = Math.ceil((record.resetTime.getTime() - now) / 1000);
+    res.set('Retry-After', String(retryAfter));
+    return res.status(429).json({
+      error: 'Too Many Requests',
+      retryAfter,
+      limit: RATE_LIMIT_MAX,
+      windowMs: RATE_LIMIT_WINDOW_MS,
+    });
+  }
+
+  record.count += 1;
+  next();
+}
+
+/**
+ * Returns the current rate-limit record for an IP, resetting the window
+ * if it has expired.
+ */
+function getRateLimitRecord(ip) {
+  const now = Date.now();
+  let record = rateLimits.get(ip);
+  if (!record || now > record.resetTime.getTime()) {
+    record = { count: 0, resetTime: new Date(now + RATE_LIMIT_WINDOW_MS) };
+    rateLimits.set(ip, record);
+  }
+  return record;
+}
+
+// ─── Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Apply rate-limit middleware to all /api routes
+app.use('/api', rateLimitMiddleware);
+
+// Rate-limit status endpoint
+app.get('/api/rate-limit-status', (req, res) => {
+  const ip = req.ip || '127.0.0.1';
+  const record = getRateLimitRecord(ip);
+  res.json({
+    ip,
+    used: record.count,
+    limit: RATE_LIMIT_MAX,
+    remaining: Math.max(0, RATE_LIMIT_MAX - record.count),
+    resetAt: record.resetTime.toISOString(),
+    windowMs: RATE_LIMIT_WINDOW_MS,
+  });
 });
 
 // In-memory data store
@@ -72,6 +142,7 @@ function getServer() {
     server = app.listen(port, () => {
       console.log(`Server running at http://localhost:${port}`);
     });
+    app.server = server; // so supertest's app.address() resolves to the real server
   }
   return server;
 }
@@ -82,3 +153,9 @@ if (require.main === module) {
 
 module.exports = app;
 module.exports.getServer = getServer;
+module.exports.server = server;
+module.exports.rateLimits = rateLimits;
+module.exports.RATE_LIMIT_MAX = RATE_LIMIT_MAX;
+module.exports.RATE_LIMIT_WINDOW_MS = RATE_LIMIT_WINDOW_MS;
+module.exports.getRateLimitRecord = getRateLimitRecord;
+module.exports.rateLimitMiddleware = rateLimitMiddleware;

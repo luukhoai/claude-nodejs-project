@@ -90,23 +90,37 @@ Fix-loop iterations append a new `---` divider and fresh timestamped sections be
 
 ### First Time — Set Up (once per machine)
 
-```bash
-claude "/TeamCreate team_name=swe-team description='Multi-agent SWE pipeline'; then spawn swe-leader, swe-analyzer, swe-developer, swe-tester, swe-reviewer using Agent with team_name=swe-team and subagent_type=general-purpose"
+**Step 1 — Create the team** (run this in Claude Code using the TeamCreate tool):
+
+```
+TeamCreate: team_name=YOUR_TEAM_NAME, description='Multi-agent SWE pipeline'
+```
+
+**Step 2 — Spawn all 5 agents** (run these as parallel Agent tool calls in the same session):
+
+```
+Agent: name=swe-leader,    team_name=YOUR_TEAM_NAME, subagent_type=general-purpose
+Agent: name=swe-analyzer,  team_name=YOUR_TEAM_NAME, subagent_type=general-purpose
+Agent: name=swe-developer,  team_name=YOUR_TEAM_NAME, subagent_type=general-purpose
+Agent: name=swe-tester,    team_name=YOUR_TEAM_NAME, subagent_type=general-purpose
+Agent: name=swe-reviewer, team_name=YOUR_TEAM_NAME, subagent_type=general-purpose
 ```
 
 Agents read their system prompts from `.claude/agents/*.md` and stay alive until shut down. Each agent's frontmatter declares its `model` (`opus` for swe-analyzer and swe-reviewer; `sonnet` for the rest).
 
 ### Every Ticket — Submit a Request
 
-```bash
-claude "/msg swe-leader add a rate-limiting endpoint to the API"
+Send a message to `swe-leader` with the feature request (via the SendMessage tool or tell your Claude Code session):
+
+```
+Message to swe-leader: add a rate-limiting endpoint to the API
 ```
 
 `swe-leader` creates the 4-phase task chain and the pipeline runs autonomously. You receive a final report on approval.
 
 ## Agents Configuration
 
-Each agent reads its full system prompt from its `.md` file in `.claude/agents/`. The team config at `.claude/teams/swe-team/config.json` lists all 5 members. The DRY pattern keeps agent definitions in one place (the `.md` files) and the team config just references them by name.
+Each agent reads its full system prompt from its `.md` file in `.claude/agents/`. The team config at `.claude/teams/{YOUR_TEAM_NAME}/config.json` lists all 5 members. The DRY pattern keeps agent definitions in one place (the `.md` files) and the team config just references them by name.
 
 ## Fix Loops
 

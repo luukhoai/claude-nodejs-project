@@ -6,16 +6,30 @@ A 5-agent pipeline: **analyzer → developer → tester → reviewer**, orchestr
 
 ### First Time — Set Up the Team (once per machine)
 
-```bash
-claude "/TeamCreate team_name=swe-team description='Multi-agent SWE pipeline'; then spawn swe-leader, swe-analyzer, swe-developer, swe-tester, swe-reviewer using Agent with team_name=swe-team and subagent_type=general-purpose"
+**Step 1 — Create the team** (run this in Claude Code using the TeamCreate tool):
+
+```
+TeamCreate: team_name=YOUR_TEAM_NAME, description='Multi-agent SWE pipeline'
 ```
 
-This creates the team and brings all 5 agents online. They read their system prompts from `.claude/agents/*.md` and stay alive until you shut them down.
+**Step 2 — Spawn all 5 agents** (run these as parallel Agent tool calls in the same session):
+
+```
+Agent: name=swe-leader,    team_name=YOUR_TEAM_NAME, subagent_type=general-purpose
+Agent: name=swe-analyzer,  team_name=YOUR_TEAM_NAME, subagent_type=general-purpose
+Agent: name=swe-developer,  team_name=YOUR_TEAM_NAME, subagent_type=general-purpose
+Agent: name=swe-tester,    team_name=YOUR_TEAM_NAME, subagent_type=general-purpose
+Agent: name=swe-reviewer, team_name=YOUR_TEAM_NAME, subagent_type=general-purpose
+```
+
+This brings all 5 agents online. They read their system prompts from `.claude/agents/*.md` and stay alive until you shut them down.
 
 ### Every Ticket — Submit a Request
 
-```bash
-claude "/msg swe-leader add rate-limiting endpoint to the API"
+Send a message to `swe-leader` with the feature request (via the SendMessage tool or tell your Claude Code session):
+
+```
+Message to swe-leader: add rate-limiting endpoint to the API
 ```
 
 The pipeline runs autonomously from there. You'll get a final report from `swe-leader` when the reviewer approves.
@@ -65,7 +79,7 @@ The pipeline runs autonomously from there. You'll get a final report from `swe-l
 | `.claude/agents/developer.md` | swe-developer system prompt |
 | `.claude/agents/tester.md` | swe-tester system prompt |
 | `.claude/agents/reviewer.md` | swe-reviewer system prompt |
-| `.claude/teams/swe-team/config.json` | Team member definitions |
+| `.claude/teams/{YOUR_TEAM_NAME}/config.json` | Team member definitions |
 | `CLAUDE.md` | Full developer guide (pipeline details, workflow, fix loops) |
 | `README.md` | This file |
 
@@ -76,4 +90,4 @@ The pipeline runs autonomously from there. You'll get a final report from `swe-l
 | Agent waiting forever | Check the task list — it may be blocked by a dependency |
 | Fix loop not exiting | swe-leader can intervene and escalate to the user |
 | Agent producing bad output | Edit the agent's `.md` file and re-spawn it |
-| Team not responding | Verify the team is active with `TeamList` or check the task list |
+| Team not responding | Verify agents are alive by checking the task list (`TaskList` tool), then re-spawn any missing agents |

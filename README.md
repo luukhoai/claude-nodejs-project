@@ -36,7 +36,7 @@ The pipeline runs autonomously from there. You'll get a final report from `swe-l
            ▼             ▼             ▼             ▼
     ┌───────────┐  ┌───────────┐  ┌───────────┐  ┌───────────┐
     │swe-analyzer│  │swe-develop│  │swe-tester │  │swe-reviewer│
-    │  (blue)   │→ │  (green)  │→ │ (yellow)  │→ │ (magenta)  │
+    │  (opus)   │→ │ (sonnet)  │→ │ (sonnet)  │→ │  (opus)   │
     └───────────┘  └───────────┘  └───────────┘  └───────────┘
                            │
                       feedback loops:
@@ -46,13 +46,15 @@ The pipeline runs autonomously from there. You'll get a final report from `swe-l
 
 ## Agents
 
-| Agent | Color | Responsibility |
+| Agent | Model | Responsibility |
 |---|---|---|
-| `swe-leader` | — | Orchestrates pipeline, owns task chain, reports to user |
-| `swe-analyzer` | Blue | Explores codebase, writes analysis artifact |
-| `swe-developer` | Green | Implements code from artifact or revision request |
-| `swe-tester` | Yellow | Writes tests, runs suite, reports pass/fail |
-| `swe-reviewer` | Magenta | Quality gates: correctness, security, design |
+| `swe-leader` | `sonnet` | Orchestrates pipeline, owns task chain, reports to user |
+| `swe-analyzer` | `opus` | Explores codebase, writes analysis artifact |
+| `swe-developer` | `sonnet` | Implements code from artifact or revision request |
+| `swe-tester` | `sonnet` | Writes tests, runs suite, reports pass/fail |
+| `swe-reviewer` | `opus` | Quality gates: correctness, security, design |
+
+`opus` handles deep analysis and code review; `sonnet` handles implementation and testing.
 
 ## Files
 

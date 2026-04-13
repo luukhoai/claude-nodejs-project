@@ -6,13 +6,13 @@ The **SWE Team** is a reusable multi-agent software engineering pipeline modeled
 
 ## Agents
 
-| Agent | Role | System Prompt |
-|---|---|---|
-| `swe-analyzer` | Understands requirements, explores codebase | `.claude/agents/analyzer.md` |
-| `swe-developer` | Implements code from analysis | `.claude/agents/developer.md` |
-| `swe-tester` | Writes and runs tests | `.claude/agents/tester.md` |
-| `swe-reviewer` | Reviews quality, security, design | `.claude/agents/reviewer.md` |
-| `swe-leader` | Orchestrates the pipeline | `.claude/agents/leader.md` |
+| Agent | Role | Model | Tools |
+|---|---|---|---|
+| `swe-analyzer` | Understands requirements, explores codebase | `opus` | Read, Grep, Glob |
+| `swe-developer` | Implements code from analysis | `sonnet` (default) | Read, Write, Edit, Bash, Grep, Glob |
+| `swe-tester` | Writes and runs tests | `sonnet` (default) | Read, Write, Bash, Grep |
+| `swe-reviewer` | Reviews quality, security, design | `opus` | Read, Write, Grep, Glob |
+| `swe-leader` | Orchestrates the pipeline | `sonnet` (default) | Read, TaskCreate, TaskUpdate, TaskList, SendMessage |
 
 ## Workflow
 
@@ -94,7 +94,7 @@ Fix-loop iterations append a new `---` divider and fresh timestamped sections be
 claude "/TeamCreate team_name=swe-team description='Multi-agent SWE pipeline'; then spawn swe-leader, swe-analyzer, swe-developer, swe-tester, swe-reviewer using Agent with team_name=swe-team and subagent_type=general-purpose"
 ```
 
-Agents read their system prompts from `.claude/agents/*.md` and stay alive until shut down.
+Agents read their system prompts from `.claude/agents/*.md` and stay alive until shut down. Each agent's frontmatter declares its `model` (`opus` for swe-analyzer and swe-reviewer; `sonnet` for the rest).
 
 ### Every Ticket — Submit a Request
 
@@ -114,13 +114,8 @@ Each agent reads its full system prompt from its `.md` file in `.claude/agents/`
 - **Review changes**: swe-reviewer → swe-developer → swe-tester → swe-reviewer (re-review)
 
 Both loops continue until the relevant gate passes. swe-leader is notified only on final approval.
-**Note**: swe-leader marks swe-tester's task complete after the initial run. Fix-loop re-runs happen at the agent-communication level without task list changes — no new task IDs are created.
 
-## Adding a New Agent
-
-1. Create `.claude/agents/new-agent.md` with name, color, tools, and role description.
-2. Add the agent as a member in `.claude/teams/swe-team/config.json`.
-3. Spawn the agent with `Agent(team_name="swe-team", name="new-agent", ...)`.
+Each agent owns its own task via `TaskUpdate`: swe-developer claims task #2, swe-tester claims task #3, swe-reviewer claims task #4. Fix-loop re-runs happen at the agent-communication level without task list changes — no new task IDs are created.
 
 ## Troubleshooting
 

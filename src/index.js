@@ -10,7 +10,7 @@ app.get('/health', (req, res) => {
 });
 
 // In-memory data store
-let items = [
+const items = [
   { id: 1, name: 'Item One', description: 'A sample item' },
   { id: 2, name: 'Item Two', description: 'Another sample item' },
 ];
